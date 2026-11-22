@@ -1,0 +1,24 @@
+name: periodogram
+description: >-
+  Period search in unevenly sampled data: generalized Lomb-Scargle
+  periodogram (GLS) with errors, classical Lomb-Scargle, false-alarm
+  probability, best-fit sine, spectral window.
+version: 0.1.0
+repository: https://github.com/sczesla/periodogram
+topics:
+  - time-series
+  - signal-processing
+  - statistics
+  - astronomy
+  - math
+
+environment:
+  sdk: ^3.5.0
+
+dev_dependencies:
+  lints: ^5.0.0
+  test: ^1.25.6
+
+screenshots:
+  - description: Periodogram with aliases from nightly sampling, spectral window, and search after subtracting the best-fit sine.
+    path: doc/images/periodogram.png
