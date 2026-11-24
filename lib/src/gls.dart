@@ -18,7 +18,8 @@ enum Normalization {
   horneBaliunas,
 
   /// `(N - 3) / 2 * p / (1 - p_max)` (Cumming et al. 1999), with the
-  /// highest power `p_max` of the periodogram.
+  /// highest power `p_max` of the periodogram. Infinite for a perfect fit
+  /// (`p_max = 1`).
   cumming,
 
   /// chi² of the sine fit, `chi²_0 * (1 - p)`. Without errors, unit
@@ -239,7 +240,8 @@ void _checkData(List<double> t, List<double> y, List<double>? err) {
 /// Least-squares solution for the sine coefficients and the power (Eqs. 5
 /// and 6). If cosine and sine are (nearly) collinear at the data points,
 /// e.g. for even sampling at multiples of the Nyquist frequency, the fit
-/// uses their common direction only.
+/// uses their common direction only. The power is clamped to [0, 1], which
+/// rounding can exceed slightly for a perfect fit.
 ({double a, double b, double p}) _solve(
   double yc,
   double ys,
@@ -255,7 +257,8 @@ void _checkData(List<double> t, List<double> y, List<double>? err) {
     return (
       a: (yc * ss - ys * cs) / d,
       b: (ys * cc - yc * cs) / d,
-      p: (ss * yc * yc + cc * ys * ys - 2 * cs * yc * ys) / (yy * d), // Eq. 5
+      p: ((ss * yc * yc + cc * ys * ys - 2 * cs * yc * ys) / (yy * d)) // Eq. 5
+          .clamp(0.0, 1.0),
     );
   }
   // Rank one: [[cc, cs], [cs, ss]] = trace * v v^T
@@ -265,7 +268,11 @@ void _checkData(List<double> t, List<double> y, List<double>? err) {
   vy /= norm;
   final proj = vx * yc + vy * ys;
   final alpha = proj / trace;
-  return (a: alpha * vx, b: alpha * vy, p: proj * proj / (trace * yy));
+  return (
+    a: alpha * vx,
+    b: alpha * vy,
+    p: (proj * proj / (trace * yy)).clamp(0.0, 1.0),
+  );
 }
 
 /// Result of [gls] or [lombScargle]: the power at each frequency, the
@@ -343,7 +350,10 @@ class Periodogram {
   /// The errors are the approximations of Zechmeister & Kürster (2009),
   /// which assume well sampled data. The frequency error follows from the
   /// curvature of the power at [index] and is only defined at a local
-  /// maximum that is not at the edge of the grid; otherwise it is NaN.
+  /// maximum that is not at the edge of the grid; otherwise it is NaN. It
+  /// uses the neighbors in [frequencies] and therefore assumes ascending
+  /// frequencies. If the fitted amplitude is 0, the phase is undefined and
+  /// its error (and that of `t0`) infinite.
   /// Throws a [RangeError] if [index] is out of range.
   SineFit sineFitAt(int index) {
     RangeError.checkValidIndex(index, frequencies, "index");
@@ -406,8 +416,12 @@ class Periodogram {
 
   /// Probability that pure Gaussian noise gives a power of at least [p]
   /// ([power] normalization) at one given frequency:
-  /// `(1 - p)^((N - 3) / 2)`.
-  double probability(double p) => exp((n - 3) / 2 * log1p(-p));
+  /// `(1 - p)^((N - 3) / 2)`. Throws an [ArgumentError] unless
+  /// `0 <= p <= 1`.
+  double probability(double p) {
+    _checkPower(p);
+    return exp((n - 3) / 2 * log1p(-p));
+  }
 
   /// False-alarm probability of the power [p] ([power] normalization): the
   /// probability that pure Gaussian noise gives a power of at least [p]
@@ -416,11 +430,18 @@ class Periodogram {
   ///
   /// Small values indicate a significant signal. Computed without the
   /// linear approximation for small values used in some implementations.
+  /// Throws an [ArgumentError] unless `0 <= p <= 1`.
   double fap(double p) =>
       -expm1(independentFrequencies * log1p(-probability(p)));
 
   /// False-alarm probability of the highest peak, `fap(best.power)`.
   double get bestFap => fap(power[bestIndex]);
+
+  static void _checkPower(double p) {
+    if (!(p >= 0 && p <= 1)) {
+      throw ArgumentError.value(p, "p", "must be >= 0 and <= 1");
+    }
+  }
 
   /// The power ([power] normalization) at which the false-alarm
   /// probability is [fap]; powers above it are more significant. The

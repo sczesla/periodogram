@@ -48,17 +48,18 @@ class SineFit {
   /// Approximate error of [amplitude].
   final double amplitudeError;
 
-  /// Approximate error of [phase], in cycles.
+  /// Approximate error of [phase], in cycles; infinite if [amplitude] is 0.
   final double phaseError;
 
-  /// Approximate error of [t0].
+  /// Approximate error of [t0]; infinite if [amplitude] is 0.
   final double t0Error;
 
   /// Approximate error of [offset].
   final double offsetError;
 
   /// Approximate error of [frequency] from the curvature of the power
-  /// peak; NaN if not at a local maximum inside the frequency grid.
+  /// peak; NaN if not at a local maximum inside the frequency grid. Assumes
+  /// ascending frequencies.
   final double frequencyError;
 
   /// Period, `1 / frequency`.

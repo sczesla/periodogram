@@ -385,6 +385,37 @@ void main() {
     });
   });
 
+  group('perfect fit', () {
+    test('noiseless sines give power <= 1 and finite results', () {
+      // Without clamping, rounding gave p = 1 + 2e-16 and NaN for the
+      // false-alarm probability and the rms in about 40 % of these cases
+      for (int seed = 0; seed < 200; seed++) {
+        final rnd = Random(seed);
+        final n = 5 + rnd.nextInt(60);
+        final t = [for (int i = 0; i < n; i++) 10 * rnd.nextDouble()]..sort();
+        final f0 = 0.1 + rnd.nextDouble();
+        final ph = 2 * pi * rnd.nextDouble();
+        final y = [for (final x in t) 3 + sin(2 * pi * f0 * x + ph)];
+        final p = gls(t, y, frequencies: [f0]);
+        expect(p.power.single, inInclusiveRange(1 - 1e-12, 1));
+        expect(p.bestFap, inInclusiveRange(0, 1e-10));
+        expect(p.best.residualRms, greaterThanOrEqualTo(0));
+        expect(p.normalized(Normalization.wrms).single, isNot(isNaN));
+      }
+    });
+
+    test('probability and fap require 0 <= p <= 1', () {
+      final p = gls(d.t, d.y, err: d.err);
+      expect(p.probability(0), 1);
+      expect(p.probability(1), 0);
+      expect(p.fap(1), 0);
+      for (final bad in [-0.1, 1.1, double.nan]) {
+        expect(() => p.probability(bad), throwsArgumentError);
+        expect(() => p.fap(bad), throwsArgumentError);
+      }
+    });
+  });
+
   group('spectralWindow', () {
     test('W(0) = 1 and aliases of even sampling', () {
       final t = [for (int i = 0; i < 30; i++) i.toDouble()];
