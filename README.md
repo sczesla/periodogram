@@ -78,13 +78,14 @@ void main() {
 }
 ```
 
-![Data with the best-fit sine, folded on its period, and the residuals, folded on the second period](https://raw.githubusercontent.com/sczesla/periodogram/main/doc/images/data.png)
-
-Data with the best-fit 1.8-day sine and the residuals (left); the data
+![Data with the best-fit sine, folded on its period, and the residuals, folded on the second period](https://raw.githubusercontent.com/sczesla/periodogram/main/doc/images/data.png)\
+*Data with the best-fit 1.8-day sine and the residuals (left); the data
 folded on 1.80 days and the residuals folded on 2.90 days, the period
-found after subtracting the first sine (right).
+found after subtracting the first sine (right).*
 
-![Periodogram with false-alarm levels, spectral window, and periodogram after subtracting the best-fit sine](https://raw.githubusercontent.com/sczesla/periodogram/main/doc/images/periodogram.png)
+![Periodogram with false-alarm levels, spectral window, and periodogram after subtracting the best-fit sine](https://raw.githubusercontent.com/sczesla/periodogram/main/doc/images/periodogram.png)\
+*Periodogram with false-alarm levels (top), spectral window (middle), and
+periodogram after subtracting the best-fit sine (bottom).*
 
 The periodogram (top) peaks at the 1.8-day period; dashed lines mark the
 true frequencies. The second highest peak is an alias: the measurements
