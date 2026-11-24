@@ -80,6 +80,12 @@ void main() {
 
 ![Data with the best-fit sine, folded on its period, and the residuals, folded on the second period](https://raw.githubusercontent.com/sczesla/periodogram/main/doc/images/data.png)
 
+Data with the best-fit 1.8-day sine and the residuals (left); the data
+folded on 1.80 days and the residuals folded on 2.90 days, the period
+found after subtracting the first sine (right).
+
+![Periodogram with false-alarm levels, spectral window, and periodogram after subtracting the best-fit sine](https://raw.githubusercontent.com/sczesla/periodogram/main/doc/images/periodogram.png)
+
 The periodogram (top) peaks at the 1.8-day period; dashed lines mark the
 true frequencies. The second highest peak is an alias: the measurements
 fall only into the night half of each day, which gives the spectral window
@@ -87,10 +93,7 @@ fall only into the night half of each day, which gives the spectral window
 one at 1/day − f is the second highest peak. The weaker 2.9-day signal
 does not stand out at first, but after subtracting the best-fit sine, it
 becomes the highest peak, with a false-alarm probability of about 0.15 %
-(bottom). Folded on this period,
-the residuals show the second sine (first figure, bottom right).
-
-![Periodogram with false-alarm levels, spectral window, and periodogram after subtracting the best-fit sine](https://raw.githubusercontent.com/sczesla/periodogram/main/doc/images/periodogram.png)
+(bottom).
 
 `p.frequencies` and `p.power` hold the periodogram itself. The figures
 were made with a finer grid (`oversampling: 30`); the complete example is
@@ -107,8 +110,8 @@ in
   `a cos(2πft) + b sin(2πft) + c` is fitted by weighted least squares
   (weights `1/err²`); the combination of sine and cosine is equivalent to
   a (co)sine with a phase. With `fitMean: false`, the weighted mean is
-  subtracted beforehand and `c` is not fitted; `lombScargle()` is this
-  case without errors.
+  subtracted beforehand and `c` is not fitted. `lombScargle(t, y)` is
+  this case without errors, i.e. the same as `gls(t, y, fitMean: false)`.
 - **Power:** loosely, the fraction of the variance explained by the sine.
   More precisely, in the default normalization of Zechmeister & Kürster
   (2009), the relative reduction of χ² by the sine, between 0 and 1.
@@ -117,7 +120,7 @@ in
 - **Frequency grid:** frequencies are in units of 1/(unit of `t`). By
   default, the grid is evenly spaced with step `1/(T · oversampling)`
   (time span `T`, `oversampling` 10), from one step up to the average
-  Nyquist frequency `N/(2T)`. Set `fMin`, `fMax`, `nyquistFactor`, or pass
+  Nyquist frequency `N/(2T)`, where `N` is the number of data points. Set `fMin`, `fMax`, `nyquistFactor`, or pass
   `frequencies` explicitly.
 - **False-alarm probability:** `p.fap(power)` is the probability that pure
   Gaussian noise produces a peak at least this high somewhere in the
@@ -130,7 +133,8 @@ in
 - **Best-fit sine:** `p.best` (highest peak) or `p.sineFitAt(index)` give
   frequency, period, amplitude, phase, a time of zero phase `t0`, offset,
   and approximate errors; `evaluate(t)` computes the curve.
-- **Spectral window:** `spectralWindow(t, frequencies)` computes
+- **Spectral window:** `spectralWindow(t, frequencies, err: err)`, with
+  `err` optional, computes
   `W(f) = |Σ wᵢ exp(2πi f tᵢ)|²` (Deeming 1975), the power spectrum of
   data that are 1 at every time, without subtracting the mean. The
   weights `wᵢ` are equal, or proportional to `1/errᵢ²` if `err` is given,
