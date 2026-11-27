@@ -6,12 +6,33 @@ on:
   workflow_dispatch:
 
 jobs:
+  # The SDK versions to test: the lower bound of environment.sdk in
+  # pubspec.yaml, which the package claims to support, and the latest.
+  sdks:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.sdks.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: sdks
+        run: |
+          constraint=$(yq '.environment.sdk' pubspec.yaml)
+          # Lower bound on SDK (assume it is the first mentioned version)
+          min=$(echo "$constraint" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n 1)
+          if [ -z "$min" ]; then
+            echo "::error file=pubspec.yaml::No lower SDK bound in environment.sdk: '$constraint'"
+            exit 1
+          fi
+          echo "Lower SDK bound: $min (from '$constraint')"
+          echo "matrix=[\"$min\", \"stable\"]" >> "$GITHUB_OUTPUT"
+
   test:
+    needs: sdks
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        sdk: ['3.5.0', stable]   # lower bound from pubspec.yaml, and the latest
+        sdk: ${{ fromJSON(needs.sdks.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v7
       - uses: dart-lang/setup-dart@v1
